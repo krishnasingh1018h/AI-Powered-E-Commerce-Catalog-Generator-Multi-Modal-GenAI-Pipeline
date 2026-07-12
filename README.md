@@ -66,7 +66,6 @@ The raw descriptive output string from Stage 1 is bridged directly into a locali
     ├── app.py              # Streamlit responsive frontend control panel
     ├── main.py             # Global orchestration layer (LangChain & Hugging Face setup)
     └── schema.py           # Pydantic data models enforcing structured JSON outputs
-```
 
 ---
 
