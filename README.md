@@ -54,7 +54,6 @@ The raw descriptive output string from Stage 1 is bridged directly into a locali
 ---
 
 📂 Repository Blueprint
-
 ├── .env                    # Local environment variables (excluded from version control)
 ├── .gitattributes          # Enforces Linux-friendly (LF) line endings for shell scripts
 ├── .gitignore              # Excludes virtual environments (venv), .env, and __pycache__
@@ -66,8 +65,7 @@ The raw descriptive output string from Stage 1 is bridged directly into a locali
     ├── api.py              # FastAPI service exposing endpoints and in-memory image compression
     ├── app.py              # Streamlit responsive frontend control panel
     ├── main.py             # Global orchestration layer (LangChain & Hugging Face setup)
-    └── schema.py           # Pydantic data models enforcing structured JSON output
-
+    └── schema.py           # Pydantic data models enforcing structured JSON outputs
 ```
 
 ---
