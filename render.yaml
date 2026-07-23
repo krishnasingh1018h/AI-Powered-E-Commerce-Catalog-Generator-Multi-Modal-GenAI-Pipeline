@@ -1,10 +1,9 @@
 services:
-  # 1. The FastAPI Backend
   - type: web
     name: catalog-backend-api
     env: python
-    plan: free # <-- This forces the service onto the Free Tier
-    buildCommand: pip install -r requirement.txt
+    plan: free
+    buildCommand: pip install --prefer-binary -r requirement.txt
     startCommand: uvicorn model.api:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: HUGGINGFACE_API_KEY
