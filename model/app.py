@@ -2,7 +2,13 @@ import streamlit as st
 import requests
 import pandas as pd
 import time
+import os
+# 1. Dynamically read the backend URL from Render, or default to local for testing
+API_URL = os.environ.get("BACKEND_API_URL", "http://127.0.0.1:8000")
 
+# 2. Update your API request calls to use the new variable
+# For example, if you have a request looking like this:
+# response = requests.post(f"{BACKEND_URL}/your-endpoint-here", files=files)
 # 1. Page Configuration & Elegant E-Commerce Styling Layouts
 st.set_page_config(page_title="CatalogStream-AI Portal", page_icon="🛍️", layout="wide")
 
@@ -26,7 +32,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Centralizing API Address Routing
-API_URL = "http://127.0.0.1:8000"
+
 
 st.markdown("# 🛍️ CatalogStream-AI Optimization Hub")
 st.markdown("##### Production-Ready Transformation Pipeline for High-Conversion Marketplace Listings")
