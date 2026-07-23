@@ -3,11 +3,12 @@ services:
   - type: web
     name: catalog-backend-api
     env: python
+    plan: free # <-- This forces the service onto the Free Tier
     buildCommand: pip install -r requirement.txt
     startCommand: uvicorn model.api:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: HUGGINGFACE_API_KEY
-        sync: false # 'sync: false' means you will securely paste the key in the Render dashboard later
+        sync: false
       - key: GROQ_API_KEY
         sync: false
 
@@ -15,10 +16,10 @@ services:
   - type: web
     name: catalog-frontend-ui
     env: python
+    plan: free # <-- This forces the service onto the Free Tier
     buildCommand: pip install -r requirement.txt
     startCommand: streamlit run app.py --server.port $PORT --server.address 0.0.0.0
     envVars:
-      # This brilliant Render feature automatically injects your live backend URL into your frontend!
       - key: BACKEND_API_URL
         fromService:
           type: web
