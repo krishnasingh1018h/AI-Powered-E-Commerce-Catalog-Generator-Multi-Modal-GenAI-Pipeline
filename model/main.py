@@ -30,7 +30,7 @@ prompt = PromptTemplate.from_template(prompt_template)
 pipeline = (prompt | model | parser)
 
 vision_llm =ChatOpenAI(
-    model="meta-llama/llama-4-scout-17b-16e-instruct",
+    model="qwen/qwen3.6-27b",
     base_url="https://api.groq.com/openai/v1",
     api_key=os.getenv("GROQ_API_KEY"),
     temperature=0.1
