@@ -9,14 +9,13 @@ import pandas as pd
 import json
 load_dotenv()
 
-llm = HuggingFaceEndpoint(
-    repo_id="Qwen/Qwen2.5-7B-Instruct",
-    task="text-generation",
-    max_new_tokens=512,
-    temperature=0.7,
-    huggingfacehub_api_token=os.getenv("HUGGINGFACE_API_KEY")
+model = ChatOpenAI(
+    model="openai/gpt-oss-120b",
+    base_url="https://api.groq.com/openai/v1",
+    api_key=os.getenv("GROQ_API_KEY"),
+    temperature=0.1
 )
-model  = ChatHuggingFace(llm=llm)
+
 parser = PydanticOutputParser(pydantic_object=ApparelListingSchema)
 prompt_template = """You are an elite e-commerce catalog engineer specializing in digital clothing marketplaces like Meesho, Myntra, and Amazon.
 
