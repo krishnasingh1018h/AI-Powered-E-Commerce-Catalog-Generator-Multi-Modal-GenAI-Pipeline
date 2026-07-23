@@ -206,8 +206,8 @@ with tab3:
         uploaded_image = st.file_uploader("Drag and drop or browse product photo:", type=["jpg", "jpeg", "png"])
         
         if uploaded_image is not None:
-            st.image(uploaded_image, caption="Uploaded Sample Preview", width="stretch")
-            analyze_action = st.button("Extract & Optimize Listing From Image", type="primary", width="stretch")            
+            st.image(uploaded_image, caption="Uploaded Sample Preview", use_container_width="stretch")
+            analyze_action = st.button("Extract & Optimize Listing From Image", type="primary", use_container_width="stretch")            
     with preview_right:
         st.markdown("#### 🌟 Live Retail Card Preview")
         
