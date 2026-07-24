@@ -103,6 +103,9 @@ document.addEventListener('DOMContentLoaded', () => {
             rawSpecsInput.value = "Fabric: Heavyweight Rugged Cotton Denim, Pattern: Washed Distressed Finish, Style: Unisex Vintage Trucker Biker Jacket, Button Front, Dual Chest Pockets, Machine Washable, All-season layering.";
         });
 
+        const streamBox = document.getElementById('single-stream-box');
+        const streamText = document.getElementById('single-stream-text');
+
         generateBtn.addEventListener('click', async () => {
             const specs = rawSpecsInput.value.trim();
             if (!specs) {
@@ -110,13 +113,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Set Loading UI State
+            // Set Loading UI State & Show Stream Window
             generateBtn.disabled = true;
             spinner.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            outputCard.classList.add('hidden');
+            if (streamBox) streamBox.classList.remove('hidden');
+            if (streamText) streamText.textContent = 'Connecting to AI stream...\n';
             const startTime = Date.now();
 
             try {
-                const response = await fetch(`${API_BASE_URL}/generate-single`, {
+                const response = await fetch(`${API_BASE_URL}/generate-single-stream`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ raw_attributes: specs })
@@ -127,20 +134,70 @@ document.addEventListener('DOMContentLoaded', () => {
                     throw new Error(`API error (${response.status}): ${errText}`);
                 }
 
-                const data = await response.json();
-                const latency = ((Date.now() - startTime) / 1000).toFixed(2);
-                latencyBadge.textContent = `Completed in ${latency}s`;
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder("utf-8");
+                let fullStreamText = "";
 
-                // Store current single result data for JSON export
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunkStr = decoder.decode(value, { stream: true });
+                    const lines = chunkStr.split("\n\n");
+
+                    for (const line of lines) {
+                        if (line.startsWith("data: ")) {
+                            const rawData = line.replace("data: ", "").trim();
+                            if (rawData === "[DONE]") break;
+                            try {
+                                const parsed = JSON.parse(rawData);
+                                if (parsed.text) {
+                                    fullStreamText += parsed.text;
+                                    if (streamText) {
+                                        streamText.textContent = fullStreamText;
+                                        streamText.scrollTop = streamText.scrollHeight;
+                                    }
+                                }
+                            } catch (e) {}
+                        }
+                    }
+                }
+
+                const latency = ((Date.now() - startTime) / 1000).toFixed(2);
+                latencyBadge.textContent = `Streamed in ${latency}s`;
+
+                // Try parsing full accumulated JSON from stream
+                let data = null;
+                try {
+                    const jsonStart = fullStreamText.indexOf('{');
+                    const jsonEnd = fullStreamText.lastIndexOf('}');
+                    if (jsonStart !== -1 && jsonEnd !== -1) {
+                        data = JSON.parse(fullStreamText.substring(jsonStart, jsonEnd + 1));
+                    }
+                } catch (e) {
+                    console.log("Stream JSON parse fallback:", e);
+                }
+
+                // Fallback to standard endpoint if stream parsing is incomplete
+                if (!data || !data.product_title) {
+                    const fallbackResp = await fetch(`${API_BASE_URL}/generate-single`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ raw_attributes: specs })
+                    });
+                    data = await fallbackResp.json();
+                }
+
+                // Store current single result data
                 currentSingleData = {
                     product_title: data.product_title || 'N/A',
                     description_bullets: data.description_bullets || data.product_description || [],
                     seo_keywords: data.seo_keywords || []
                 };
 
-                // Render Results
+                // Render Final Formatted Cards
                 renderSingleResult(data);
-                showToast(`✅ Listing generated successfully in ${latency}s!`, "success");
+                showToast(`⚡ Streamed AI tokens live in ${latency}s!`, "success");
 
             } catch (err) {
                 showToast(`❌ Failure: ${err.message}`, "error");

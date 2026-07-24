@@ -1,16 +1,17 @@
 import os
 import io
 import base64
-from fastapi import FastAPI, HTTPException,UploadFile,File
-from pydantic import BaseModel
-from typing import List,Dict,Any
-from model.schema import ApparelListingSchema
-from model.main import pipeline,parser,vision_llm
-import requests
-from PIL import Image
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
+from pydantic import BaseModel
+from typing import List, Dict, Any
+from model.schema import ApparelListingSchema
+from model.main import pipeline, parser, vision_llm, model, prompt
+import requests
+from PIL import Image
+import json
 
 app = FastAPI(
     title="E-Commerce Apparel Listing Generator",
@@ -62,6 +63,29 @@ async def generate_single(request: RawAttributesRequest):
             raise HTTPException(status_code=401, detail="INVALID_API_KEY: Invalid Groq API key. Please update GROQ_API_KEY in your .env file with a valid key from console.groq.com.")
         import traceback
         traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/generate-single-stream")
+async def generate_single_stream(request: RawAttributesRequest):
+    try:
+        format_instructions = parser.get_format_instructions()
+        formatted_prompt = prompt.format(
+            raw_specs=request.raw_attributes,
+            format_instructions=format_instructions
+        )
+
+        async def stream_generator():
+            async for chunk in model.astream(formatted_prompt):
+                if chunk.content:
+                    payload = json.dumps({"text": chunk.content})
+                    yield f"data: {payload}\n\n"
+            yield "data: [DONE]\n\n"
+
+        return StreamingResponse(stream_generator(), media_type="text/event-stream")
+    except Exception as e:
+        err_str = str(e)
+        if "401" in err_str or "invalid_api_key" in err_str or "Invalid API Key" in err_str:
+            raise HTTPException(status_code=401, detail="INVALID_API_KEY: Invalid Groq API key. Please update GROQ_API_KEY in your .env file with a valid key from console.groq.com.")
         raise HTTPException(status_code=500, detail=str(e))
     
 @app.post("/generate-batch", response_model=List[ApparelListingSchema])
