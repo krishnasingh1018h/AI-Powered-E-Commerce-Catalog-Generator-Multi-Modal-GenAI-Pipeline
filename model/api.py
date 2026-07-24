@@ -8,15 +8,40 @@ from model.schema import ApparelListingSchema
 from model.main import pipeline,parser,vision_llm
 import requests
 from PIL import Image
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
 app = FastAPI(
-title="E-Commerce Apparel Listing Generator",
-description="A FastAPI application that transforms raw apparel specifications into structured e-commerce product listings.",
+    title="E-Commerce Apparel Listing Generator",
+    description="A FastAPI application that transforms raw apparel specifications into structured e-commerce product listings.",
 )
 
+# Enable CORS for all origins
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount Static Files & Root Route
+static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static")
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+@app.get("/")
+async def serve_index():
+    index_path = os.path.join(static_dir, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return {"message": "API is running. Frontend static/index.html not found."}
+
 class RawAttributesRequest(BaseModel):
-    raw_attributes:str
+    raw_attributes: str
 class BatchAttributesResponse(BaseModel):
-    raw_specs_list:List[str]
+    raw_specs_list: List[str]
 
 @app.get("/status")
 def get_status():
@@ -28,9 +53,13 @@ async def generate_single(request: RawAttributesRequest):
         format_instructions = parser.get_format_instructions()
         result = pipeline.invoke({
             "raw_specs": request.raw_attributes,
-            "format_instructions":format_instructions})
+            "format_instructions": format_instructions
+        })
         return result
     except Exception as e:
+        err_str = str(e)
+        if "401" in err_str or "invalid_api_key" in err_str or "Invalid API Key" in err_str:
+            raise HTTPException(status_code=401, detail="INVALID_API_KEY: Invalid Groq API key. Please update GROQ_API_KEY in your .env file with a valid key from console.groq.com.")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
@@ -78,8 +107,25 @@ async def generate_from_image(file: UploadFile = File(...)):
         # 6. Encode the small, optimized byte string to Base64
         image_b64 = base64.b64encode(compressed_bytes).decode("utf-8")
         
-        # --- The rest of your payload execution stays exactly the same ---
-        vision_prompt = "..." 
+        # 7. Enhanced Vision Prompt with Strict Clothing Validation
+        vision_prompt = """You are an expert e-commerce catalog vision auditor specializing in fashion and apparel.
+
+STEP 1: CLOTHING VALIDATION
+Inspect the provided image carefully. Determine whether the image clearly depicts a garment, clothing item, apparel, footwear, or fashion accessory (e.g. shirt, t-shirt, dress, pants, jeans, jacket, saree, shoes, hoodie, skirt, shorts, sweater, suit, etc.).
+If the image DOES NOT contain any clothing or apparel (for example: if it is a screenshot of code/text, a document, a building, animal, vehicle, landscape, electronics, food, etc.), reply EXACTLY with:
+"NOT_CLOTHING: The uploaded image does not contain apparel or clothing. Please upload a clear photo of a garment or fashion item."
+
+STEP 2: APPAREL EXTRACTION (Only if valid clothing item)
+If the image DOES contain clothing/apparel:
+Ignore any human model, mannequin, or background elements. Focus purely on the apparel item.
+Describe in detail:
+- Item type and style (e.g. A-line midi dress, slim fit denim jeans, oversized hoodie)
+- Fabric texture, weave, and visual material quality (e.g. breathable cotton denim, silk chiffon, knit wool)
+- Color, shades, pattern, and wash (e.g. indigo blue wash, floral botanical print, solid pastel pink)
+- Design highlights: necklines, sleeves, pockets, closures, waistline, hemlines, embellishments, stitching.
+- Intended wearing occasions and style aesthetics (casual weekend, formal office, festive, activewear).
+"""
+
         message = {
             "role": "user",
             "content": [
@@ -88,13 +134,23 @@ async def generate_from_image(file: UploadFile = File(...)):
             ]
         }
         vision_response = vision_llm.invoke([message])
-        raw_visual_fact = vision_response.content
+        raw_visual_fact = str(vision_response.content).strip()
+
+        # Check for Non-Clothing Validation failure
+        if "NOT_CLOTHING" in raw_visual_fact or raw_visual_fact.startswith("NOT_CLOTHING"):
+            raise HTTPException(
+                status_code=400,
+                detail="NOT_CLOTHING: The uploaded image does not contain clothing or apparel. Please upload a clear product photo of a garment (e.g. shirt, dress, jeans, saree, jacket)."
+            )
+
         format_instruction = parser.get_format_instructions()
-        final_structured_output =pipeline.invoke({
-            "raw_specs":raw_visual_fact,
-            "format_instructions":format_instruction
+        final_structured_output = pipeline.invoke({
+            "raw_specs": raw_visual_fact,
+            "format_instructions": format_instruction
         })
         return final_structured_output
+    except HTTPException as http_err:
+        raise http_err
     except Exception as e:
-        raise HTTPException(status_code=500,detail=f"Hugging Face Vision Pipeline Error:{str(e)}")
+        raise HTTPException(status_code=500, detail=f"Vision Pipeline Error: {str(e)}")
     

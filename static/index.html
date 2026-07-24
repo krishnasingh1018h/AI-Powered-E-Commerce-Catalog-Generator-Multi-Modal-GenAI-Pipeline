@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CatalogStream AI | Smart E-Commerce Catalog Generator</title>
+    <meta name="description" content="AI-Powered E-Commerce Catalog Generator for Meesho, Amazon, and Myntra listings.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <!-- SheetJS for XLSX parsing support -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Main Wrapper -->
+    <div class="app-container">
+
+        <!-- Header Navbar -->
+        <header class="app-header">
+            <div class="brand-group">
+                <div class="brand-icon">🛍️</div>
+                <div>
+                    <h1 class="brand-title">CatalogStream AI</h1>
+                    <p class="brand-subtitle">Smart E-Commerce Catalog Generator for Meesho, Amazon & Myntra</p>
+                </div>
+            </div>
+            <div class="status-pill" id="system-status-pill">
+                <span class="status-dot offline" id="status-dot"></span>
+                <span id="status-text">Connecting...</span>
+            </div>
+        </header>
+
+        <!-- Main Content Area with Tabs -->
+        <main class="main-content">
+            
+            <!-- Navigation Tabs -->
+            <nav class="nav-tabs" role="tablist">
+                <button class="tab-btn active" data-tab="tab-single" id="tab-btn-single">
+                    <span class="tab-icon">✨</span> Single Product
+                </button>
+                <button class="tab-btn" data-tab="tab-batch" id="tab-btn-batch">
+                    <span class="tab-icon">📦</span> Batch CSV Processing
+                </button>
+                <button class="tab-btn" data-tab="tab-image" id="tab-btn-image">
+                    <span class="tab-icon">📸</span> Photo to Listing
+                </button>
+            </nav>
+
+            <!-- TAB 1: SINGLE PRODUCT LISTING -->
+            <section id="tab-single" class="tab-pane active">
+                <div class="pane-header">
+                    <h2>Single Product Generator</h2>
+                    <p>Transform raw apparel specifications into optimized, high-converting product listings.</p>
+                </div>
+
+                <div class="grid-split">
+                    <!-- Left Input Column -->
+                    <div class="card-panel">
+                        <div class="panel-header">
+                            <h3>📥 Input Specifications</h3>
+                        </div>
+
+                        <!-- Quick Presets -->
+                        <div class="preset-group">
+                            <span class="preset-label">Presets:</span>
+                            <button type="button" class="preset-btn" id="preset-shirt">👔 Indigo Shirt</button>
+                            <button type="button" class="preset-btn" id="preset-dress">👗 Summer Dress</button>
+                            <button type="button" class="preset-btn" id="preset-jacket">🧥 Denim Jacket</button>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="single-raw-specs">Apparel Characteristics & Specs:</label>
+                            <textarea id="single-raw-specs" class="form-control" rows="8" placeholder="e.g., Fabric: Premium Cotton, Pattern: Indigo Blue Striped, Style: Casual Dress Shirt, Slim fit, breathable fabric for summer wear..."></textarea>
+                        </div>
+
+                        <button id="btn-generate-single" class="btn btn-primary btn-block">
+                            <span class="btn-text">⚡ Generate Product Listing</span>
+                            <span class="spinner hidden" id="spinner-single"></span>
+                        </button>
+                    </div>
+
+                    <!-- Right Output Preview Column -->
+                    <div class="card-panel">
+                        <div class="panel-header">
+                            <h3>🌟 Live Catalog Preview</h3>
+                            <span class="badge badge-success" id="latency-single">Ready</span>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div id="single-empty-state" class="empty-state">
+                            <div class="empty-icon">💡</div>
+                            <h4>No Listing Generated Yet</h4>
+                            <p>Enter specifications on the left and click "Generate Product Listing" to view output.</p>
+                        </div>
+
+                        <!-- Output Container -->
+                        <div id="single-output-card" class="output-card hidden">
+                            <div class="output-section">
+                                <div class="output-label-row">
+                                    <span class="output-label">📌 Product Title</span>
+                                    <button class="copy-btn" data-target="single-output-title">📋 Copy Title</button>
+                                </div>
+                                <div class="output-box" id="single-output-title"></div>
+                            </div>
+
+                            <div class="output-section">
+                                <div class="output-label-row">
+                                    <span class="output-label">📝 Description Highlights</span>
+                                    <button class="copy-btn" data-target="single-output-bullets">📋 Copy All</button>
+                                </div>
+                                <ul class="bullet-list" id="single-output-bullets"></ul>
+                            </div>
+
+                            <div class="output-section">
+                                <div class="output-label-row">
+                                    <span class="output-label">🔍 SEO Keywords</span>
+                                    <button class="copy-btn" data-target="single-output-keywords">📋 Copy Keywords</button>
+                                </div>
+                                <div class="tag-cloud" id="single-output-keywords"></div>
+                            </div>
+
+                            <!-- Action Button Group -->
+                            <div class="action-btn-row margin-top">
+                                <button id="single-btn-download-json" class="btn btn-primary btn-flex">
+                                    📥 Download JSON
+                                </button>
+                                <button id="single-btn-save-history" class="btn btn-outline btn-flex">
+                                    ⭐ Save to History
+                                </button>
+                            </div>
+
+                            <!-- Platform Previews -->
+                            <div class="platform-previews-container margin-top">
+                                <h4 class="section-title">🌐 Marketplace Format Previews</h4>
+                                <div class="platform-grid">
+                                    <!-- Meesho -->
+                                    <div class="platform-card meesho-card">
+                                        <div class="platform-header">
+                                            <span class="platform-badge meesho-badge">MEESHO STYLE</span>
+                                            <span class="price-pill">₹499 <s class="orig-price">₹1,299</s></span>
+                                        </div>
+                                        <div class="platform-title" id="single-meesho-title">Mobile Title</div>
+                                        <ul class="platform-bullets" id="single-meesho-bullets"></ul>
+                                    </div>
+
+                                    <!-- Amazon -->
+                                    <div class="platform-card amazon-card">
+                                        <div class="platform-header">
+                                            <span class="platform-badge amazon-badge">AMAZON STYLE</span>
+                                            <span class="prime-tag">✓ prime</span>
+                                        </div>
+                                        <div class="platform-title" id="single-amazon-title">Amazon SEO Title</div>
+                                        <ul class="platform-bullets" id="single-amazon-bullets"></ul>
+                                    </div>
+
+                                    <!-- Myntra -->
+                                    <div class="platform-card myntra-card">
+                                        <div class="platform-header">
+                                            <span class="platform-badge myntra-badge">MYNTRA STYLE</span>
+                                            <span class="trend-tag">TRENDING</span>
+                                        </div>
+                                        <div class="platform-title" id="single-myntra-title">Fashion Title</div>
+                                        <ul class="platform-bullets" id="single-myntra-bullets"></ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SEO Insights & Optimization Dashboard -->
+                            <div class="seo-insights-container margin-top">
+                                <div class="panel-header-clean">
+                                    <h4 class="section-title">📊 SEO Insights & Optimization</h4>
+                                    <span class="badge badge-info" id="single-seo-score-badge">SEO Score: 0/100</span>
+                                </div>
+
+                                <div class="seo-metrics-grid">
+                                    <div class="seo-metric-card">
+                                        <span class="seo-metric-label">TITLE LENGTH</span>
+                                        <span class="seo-metric-value" id="single-metric-title-len">0 chars</span>
+                                    </div>
+                                    <div class="seo-metric-card">
+                                        <span class="seo-metric-label">BULLET COUNT</span>
+                                        <span class="seo-metric-value" id="single-metric-bullet-count">0</span>
+                                    </div>
+                                    <div class="seo-metric-card">
+                                        <span class="seo-metric-label">DESCRIPTION LENGTH</span>
+                                        <span class="seo-metric-value" id="single-metric-desc-len">0 chars</span>
+                                    </div>
+                                    <div class="seo-metric-card">
+                                        <span class="seo-metric-label">KEYWORD COUNT</span>
+                                        <span class="seo-metric-value" id="single-metric-kw-count">0</span>
+                                    </div>
+                                </div>
+
+                                <div class="seo-score-box">
+                                    <div class="seo-score-header">
+                                        <span>SEO Optimization Quality</span>
+                                        <span id="single-seo-percentage">0%</span>
+                                    </div>
+                                    <div class="seo-bar-bg">
+                                        <div class="seo-bar-fill" id="single-seo-bar-fill" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: BATCH PRODUCT STREAM -->
+            <section id="tab-batch" class="tab-pane">
+                <div class="pane-header">
+                    <h2>Batch Inventory Processing</h2>
+                    <p>Upload a CSV or Excel spreadsheet to generate listings for your entire inventory at once.</p>
+                </div>
+
+                <div class="card-panel">
+                    <div class="panel-header">
+                        <h3>📦 File Import</h3>
+                        <button id="btn-download-sample-csv" class="btn btn-outline btn-sm">
+                            📥 Download Template (.csv)
+                        </button>
+                    </div>
+
+                    <!-- File Drop Area -->
+                    <div class="drop-zone" id="batch-drop-zone">
+                        <div class="drop-icon">📄</div>
+                        <p class="drop-text">Drag & drop CSV or Excel (.xlsx) file, or <label for="batch-file-input" class="file-browse-link">browse</label></p>
+                        <p class="drop-subtext">Spreadsheet must contain column: <code>raw_attributes</code></p>
+                        <input type="file" id="batch-file-input" accept=".csv, .xlsx" class="hidden-file-input">
+                    </div>
+
+                    <!-- File Info -->
+                    <div id="batch-file-info" class="file-info-bar hidden">
+                        <div class="file-details">
+                            <span class="file-icon">📊</span>
+                            <span id="batch-filename" class="filename-text">file.csv</span>
+                            <span id="batch-rowcount" class="badge badge-info">0 rows</span>
+                        </div>
+                        <button id="btn-remove-batch-file" class="btn btn-icon" title="Remove file">✕</button>
+                    </div>
+
+                    <!-- Preview Table -->
+                    <div id="batch-preview-container" class="table-container hidden">
+                        <h4>🔍 File Preview</h4>
+                        <div class="table-wrapper">
+                            <table class="data-table" id="batch-preview-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Raw Apparel Specifications</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Execute Button -->
+                    <div class="action-bar margin-top">
+                        <button id="btn-execute-batch" class="btn btn-primary btn-block" disabled>
+                            <span class="btn-text">🚀 Run Batch Generation</span>
+                            <span class="spinner hidden" id="spinner-batch"></span>
+                        </button>
+                    </div>
+
+                    <!-- Progress Indicator -->
+                    <div id="batch-progress-box" class="progress-box hidden">
+                        <div class="progress-header">
+                            <span id="batch-status-label">Processing items...</span>
+                            <span id="batch-percentage">0%</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" id="batch-progress-fill"></div>
+                        </div>
+                    </div>
+
+                    <!-- Results Table -->
+                    <div id="batch-results-container" class="table-container margin-top hidden">
+                        <div class="panel-header">
+                            <h4>📊 Generated Catalog Manifest</h4>
+                            <button id="btn-download-results-csv" class="btn btn-success">
+                                📥 Export CSV
+                            </button>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table" id="batch-results-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Original Specifications</th>
+                                        <th>Generated Title</th>
+                                        <th>Description Highlights</th>
+                                        <th>SEO Keywords</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: IMAGE-TO-LISTING STUDIO -->
+            <section id="tab-image" class="tab-pane">
+                <div class="pane-header">
+                    <h2>Photo to Listing Generator</h2>
+                    <p>Upload a product photo to automatically extract listing metadata using AI vision.</p>
+                </div>
+
+                <div class="grid-split">
+                    <!-- Left Input Column -->
+                    <div class="card-panel">
+                        <div class="panel-header">
+                            <h3>📸 Product Image</h3>
+                        </div>
+
+                        <!-- Image Drop Area -->
+                        <div class="drop-zone" id="image-drop-zone">
+                            <div class="drop-icon">🖼️</div>
+                            <p class="drop-text">Drag & drop product photo, or <label for="image-file-input" class="file-browse-link">browse</label></p>
+                            <p class="drop-subtext">JPG, JPEG, or PNG format</p>
+                            <input type="file" id="image-file-input" accept="image/jpeg, image/png, image/jpg" class="hidden-file-input">
+                        </div>
+
+                        <!-- Image Preview Box -->
+                        <div id="image-preview-container" class="image-preview-box hidden">
+                            <img id="image-preview-img" src="" alt="Uploaded Product Preview">
+                            <div class="image-overlay">
+                                <span id="image-preview-name">product.jpg</span>
+                                <button id="btn-remove-image" class="btn btn-sm btn-danger">Change Image</button>
+                            </div>
+                        </div>
+
+                        <button id="btn-generate-image" class="btn btn-primary btn-block margin-top" disabled>
+                            <span class="btn-text">🔍 Extract & Generate Listing</span>
+                            <span class="spinner hidden" id="spinner-image"></span>
+                        </button>
+                    </div>
+
+                    <!-- Right Output Preview Column -->
+                    <div class="card-panel">
+                        <div class="panel-header">
+                            <h3>🌟 Live Catalog Preview</h3>
+                            <span class="badge badge-success" id="latency-image">Ready</span>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div id="image-empty-state" class="empty-state">
+                            <div class="empty-icon">📷</div>
+                            <h4>No Photo Analyzed Yet</h4>
+                            <p>Upload a product photo on the left and click "Extract & Generate Listing" to view results.</p>
+                        </div>
+
+                        <!-- Non-Clothing Alert Banner -->
+                        <div id="image-error-alert" class="alert-box alert-warning hidden">
+                            <div class="alert-icon">⚠️</div>
+                            <div class="alert-content">
+                                <h4>Invalid Image Uploaded</h4>
+                                <p id="image-error-msg">The uploaded photo does not contain clothing or apparel. Please upload a clear photo of a garment (e.g. shirt, dress, jeans, saree, jacket, shoes).</p>
+                            </div>
+                        </div>
+
+                        <!-- Output Container -->
+                        <div id="image-output-card" class="output-card hidden">
+                            <div class="output-section">
+                                <div class="output-label-row">
+                                    <span class="output-label">📌 Product Title</span>
+                                    <button class="copy-btn" data-target="image-output-title">📋 Copy Title</button>
+                                </div>
+                                <div class="output-box" id="image-output-title"></div>
+                            </div>
+
+                            <div class="output-section">
+                                <div class="output-label-row">
+                                    <span class="output-label">📝 Description Highlights</span>
+                                    <button class="copy-btn" data-target="image-output-bullets">📋 Copy All</button>
+                                </div>
+                                <ul class="bullet-list" id="image-output-bullets"></ul>
+                            </div>
+
+                            <div class="output-section">
+                                <div class="output-label-row">
+                                    <span class="output-label">🔍 SEO Keywords</span>
+                                    <button class="copy-btn" data-target="image-output-keywords">📋 Copy Keywords</button>
+                                </div>
+                                <div class="tag-cloud" id="image-output-keywords"></div>
+                            </div>
+
+                            <!-- Action Button Group -->
+                            <div class="action-btn-row margin-top">
+                                <button id="image-btn-download-json" class="btn btn-primary btn-flex">
+                                    📥 Download JSON
+                                </button>
+                                <button id="image-btn-save-history" class="btn btn-outline btn-flex">
+                                    ⭐ Save to History
+                                </button>
+                            </div>
+
+                            <!-- Platform Previews -->
+                            <div class="platform-previews-container margin-top">
+                                <h4 class="section-title">🌐 Marketplace Format Previews</h4>
+                                <div class="platform-grid">
+                                    <!-- Meesho -->
+                                    <div class="platform-card meesho-card">
+                                        <div class="platform-header">
+                                            <span class="platform-badge meesho-badge">MEESHO STYLE</span>
+                                            <span class="price-pill">₹499 <s class="orig-price">₹1,299</s></span>
+                                        </div>
+                                        <div class="platform-title" id="image-meesho-title">Mobile Title</div>
+                                        <ul class="platform-bullets" id="image-meesho-bullets"></ul>
+                                    </div>
+
+                                    <!-- Amazon -->
+                                    <div class="platform-card amazon-card">
+                                        <div class="platform-header">
+                                            <span class="platform-badge amazon-badge">AMAZON STYLE</span>
+                                            <span class="prime-tag">✓ prime</span>
+                                        </div>
+                                        <div class="platform-title" id="image-amazon-title">Amazon SEO Title</div>
+                                        <ul class="platform-bullets" id="image-amazon-bullets"></ul>
+                                    </div>
+
+                                    <!-- Myntra -->
+                                    <div class="platform-card myntra-card">
+                                        <div class="platform-header">
+                                            <span class="platform-badge myntra-badge">MYNTRA STYLE</span>
+                                            <span class="trend-tag">TRENDING</span>
+                                        </div>
+                                        <div class="platform-title" id="image-myntra-title">Fashion Title</div>
+                                        <ul class="platform-bullets" id="image-myntra-bullets"></ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SEO Insights & Optimization Dashboard -->
+                            <div class="seo-insights-container margin-top">
+                                <div class="panel-header-clean">
+                                    <h4 class="section-title">📊 SEO Insights & Optimization</h4>
+                                    <span class="badge badge-info" id="image-seo-score-badge">SEO Score: 0/100</span>
+                                </div>
+
+                                <div class="seo-metrics-grid">
+                                    <div class="seo-metric-card">
+                                        <span class="seo-metric-label">TITLE LENGTH</span>
+                                        <span class="seo-metric-value" id="image-metric-title-len">0 chars</span>
+                                    </div>
+                                    <div class="seo-metric-card">
+                                        <span class="seo-metric-label">BULLET COUNT</span>
+                                        <span class="seo-metric-value" id="image-metric-bullet-count">0</span>
+                                    </div>
+                                    <div class="seo-metric-card">
+                                        <span class="seo-metric-label">DESCRIPTION LENGTH</span>
+                                        <span class="seo-metric-value" id="image-metric-desc-len">0 chars</span>
+                                    </div>
+                                    <div class="seo-metric-card">
+                                        <span class="seo-metric-label">KEYWORD COUNT</span>
+                                        <span class="seo-metric-value" id="image-metric-kw-count">0</span>
+                                    </div>
+                                </div>
+
+                                <div class="seo-score-box">
+                                    <div class="seo-score-header">
+                                        <span>SEO Optimization Quality</span>
+                                        <span id="image-seo-percentage">0%</span>
+                                    </div>
+                                    <div class="seo-bar-bg">
+                                        <div class="seo-bar-fill" id="image-seo-bar-fill" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>© 2026 CatalogStream AI • Smart E-Commerce Catalog Generator</p>
+        </footer>
+
+    </div>
+
+    <!-- Application Script -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
