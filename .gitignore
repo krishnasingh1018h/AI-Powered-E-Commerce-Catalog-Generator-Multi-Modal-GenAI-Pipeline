@@ -1,2 +1,6 @@
 .venv/
 .env
+PROJECT_CONCEPT_NOTE.txt
+PROJECT_DELIVERABLES.txt
+PROJECT_REPORT.txt
+*.txt
