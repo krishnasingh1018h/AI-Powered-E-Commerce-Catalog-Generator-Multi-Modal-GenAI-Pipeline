@@ -613,19 +613,26 @@ document.addEventListener('DOMContentLoaded', () => {
             reader.readAsDataURL(file);
         }
 
+        const imageStreamBox = document.getElementById('image-stream-box');
+        const imageStreamText = document.getElementById('image-stream-text');
+
         generateBtn.addEventListener('click', async () => {
             if (!selectedImageFile) return;
 
             generateBtn.disabled = true;
             spinner.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            outputCard.classList.add('hidden');
             if (errorAlert) errorAlert.classList.add('hidden');
+            if (imageStreamBox) imageStreamBox.classList.remove('hidden');
+            if (imageStreamText) imageStreamText.textContent = 'Analyzing image & connecting to Vision AI stream...\n';
             const startTime = Date.now();
 
             const formData = new FormData();
             formData.append('file', selectedImageFile);
 
             try {
-                const response = await fetch(`${API_BASE_URL}/generate-image`, {
+                const response = await fetch(`${API_BASE_URL}/generate-image-stream`, {
                     method: 'POST',
                     body: formData
                 });
@@ -635,9 +642,58 @@ document.addEventListener('DOMContentLoaded', () => {
                     throw new Error(`Vision API error (${response.status}): ${errText}`);
                 }
 
-                const data = await response.json();
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder("utf-8");
+                let fullStreamText = "";
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunkStr = decoder.decode(value, { stream: true });
+                    const lines = chunkStr.split("\n\n");
+
+                    for (const line of lines) {
+                        if (line.startsWith("data: ")) {
+                            const rawData = line.replace("data: ", "").trim();
+                            if (rawData === "[DONE]") break;
+                            try {
+                                const parsed = JSON.parse(rawData);
+                                if (parsed.text) {
+                                    fullStreamText += parsed.text;
+                                    if (imageStreamText) {
+                                        imageStreamText.textContent = fullStreamText;
+                                        imageStreamText.scrollTop = imageStreamText.scrollHeight;
+                                    }
+                                }
+                            } catch (e) {}
+                        }
+                    }
+                }
+
                 const latency = ((Date.now() - startTime) / 1000).toFixed(2);
-                latencyBadge.textContent = `Completed in ${latency}s`;
+                latencyBadge.textContent = `Streamed in ${latency}s`;
+
+                // Try parsing full accumulated JSON from stream
+                let data = null;
+                try {
+                    const jsonStart = fullStreamText.indexOf('{');
+                    const jsonEnd = fullStreamText.lastIndexOf('}');
+                    if (jsonStart !== -1 && jsonEnd !== -1) {
+                        data = JSON.parse(fullStreamText.substring(jsonStart, jsonEnd + 1));
+                    }
+                } catch (e) {
+                    console.log("Vision stream JSON parse fallback:", e);
+                }
+
+                // Fallback to standard endpoint if stream parsing is incomplete
+                if (!data || !data.product_title) {
+                    const fallbackResp = await fetch(`${API_BASE_URL}/generate-image`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    data = await fallbackResp.json();
+                }
 
                 // Store current image result data for JSON export
                 currentImageData = {
@@ -647,13 +703,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
 
                 renderImageResult(data);
-                showToast(`🎉 Listing generated from visual image in ${latency}s!`, "success");
+                showToast(`🎉 Vision AI streamed listing live in ${latency}s!`, "success");
 
             } catch (err) {
                 const errString = err.message || '';
                 if (errString.includes('NOT_CLOTHING') || errString.includes('not contain clothing') || errString.includes('apparel')) {
                     emptyState.classList.add('hidden');
                     outputCard.classList.add('hidden');
+                    if (imageStreamBox) imageStreamBox.classList.add('hidden');
                     if (errorAlert) {
                         errorAlert.classList.remove('hidden');
                         if (errorMsgEl) errorMsgEl.textContent = "The uploaded photo does not contain clothing or apparel. Please upload a clear product photo of a garment (e.g. shirt, dress, jeans, saree, jacket, shoes).";

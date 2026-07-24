@@ -1,0 +1,50 @@
+================================================================================
+                           PROJECT CONCEPT NOTE
+================================================================================
+
+1. PROJECT TITLE AND APPLICATION NAME
+   - Application Name: CatalogStream AI Studio
+   - Project Title: AI-Powered Multi-Modal E-Commerce Catalog Generator Pipeline
+   - Live Deployed Application Link: https://ai-powered-e-commerce-catalog-generator-uir7.onrender.com/
+
+--------------------------------------------------------------------------------
+2. PROBLEM STATEMENT / OBJECTIVE
+   E-commerce sellers on Indian marketplaces (Meesho, Amazon India, Myntra) spend 
+   considerable manual effort converting raw vendor specification sheets and product 
+   photos into platform-compliant listings. Poorly structured listings result in 
+   low search indexing, high bounce rates, and catalog rejection.
+
+   Objective: To design, build, containerize, and deploy a full-stack, AI-powered web 
+   application that automates product title generation, feature bullet structuring, 
+   SEO keyword extraction, platform preview rendering, and real-time SEO scoring in seconds.
+
+--------------------------------------------------------------------------------
+3. TARGET USER AND USE CASE
+   - D2C Apparel Brands & Fashion Merchants: Rapid catalog onboarding for seasonal inventory.
+   - Marketplace Merchants (Meesho, Amazon, Myntra): Converting fragmented vendor notes into optimized marketplace copy.
+   - E-Commerce Operations Teams: Processing bulk inventory manifests (CSV/Excel) simultaneously.
+
+--------------------------------------------------------------------------------
+4. LLM MODEL AND API USED
+   - Core Text & Batch Generator: Qwen2.5-7B-Instruct via Groq Cloud API.
+   - Visual Inventory Studio: Llama 3.2 11B Multimodal Vision Model via Groq API.
+   - Orchestration Framework: LangChain (LCEL Pipelines, Pydantic Schema Parsers, SSE Streaming).
+
+--------------------------------------------------------------------------------
+5. KEY FEATURES OF THE APPLICATION
+   a. Single Product Generator: Converts raw text specs into structured JSON listing copy with real-time SSE token streaming.
+   b. Batch Inventory Generator: Upload CSV/XLSX manifests with client-side parsing and concurrent batch generation.
+   c. Visual Onboarding Studio: Upload apparel product photos to extract listing metadata using AI vision with automated non-clothing validation and real-time SSE token streaming.
+   d. Platform-Specific Previews: Live preview cards formatted for Meesho (pink theme), Amazon (amber prime theme), and Myntra (magenta trend theme).
+   e. 📊 SEO Insights & Optimization Dashboard: Real-time SEO scoring engine (0-100) evaluating title bounds, bullet specificity, keyword density, and search indexability.
+   f. Export & History: One-click structured JSON download and browser history persistence.
+
+--------------------------------------------------------------------------------
+6. EXPECTED USER EXPERIENCE AND OUTCOMES
+   - Streamlined, mobile-optimized glassmorphic UI with zero latency friction.
+   - Reduces listing creation time from 30 minutes to under 3 seconds per product.
+   - Improves marketplace search indexing score and catalog compliance.
+
+--------------------------------------------------------------------------------
+LIVE DEPLOYED LINK: https://ai-powered-e-commerce-catalog-generator-uir7.onrender.com/
+================================================================================

@@ -1,6 +1,8 @@
-AI-Powered E-Commerce Catalog Generator
+# AI-Powered E-Commerce Catalog Generator
 
-An enterprise-grade, multi-modal GenAI cataloging pipeline that automates the transformation of raw product apparel imagery into structured, SEO-optimized marketplace listings. This project employs a decoupled architecture combining a **FastAPI backend microservice**, a **Streamlit frontend dashboard**, and a **Two-Stage LLM extraction workflow** to strike a perfect balance between high-performance cloud vision capabilities and cost-effective, deterministic local text structuring.
+🌐 **Live Application URL**: [https://ai-powered-e-commerce-catalog-generator-uir7.onrender.com/](https://ai-powered-e-commerce-catalog-generator-uir7.onrender.com/)
+
+An enterprise-grade, multi-modal GenAI cataloging pipeline that automates the transformation of raw product apparel imagery into structured, SEO-optimized marketplace listings. This project employs a modern, unified full-stack architecture combining a **FastAPI backend microservice**, a **Single-Page HTML5/CSS3/JS frontend dashboard**, and a **Two-Stage LLM extraction workflow** to strike a perfect balance between high-performance cloud vision capabilities and cost-effective text structuring.
 
 ---
 
