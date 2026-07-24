@@ -79,9 +79,13 @@ async def generate_single_stream(request: RawAttributesRequest):
                 if chunk.content:
                     payload = json.dumps({"text": chunk.content})
                     yield f"data: {payload}\n\n"
-            yield "data: [DONE]\n\n"
-
-        return StreamingResponse(stream_generator(), media_type="text/event-stream")
+        stream_headers = {
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+            "Content-Type": "text/event-stream"
+        }
+        return StreamingResponse(stream_generator(), headers=stream_headers, media_type="text/event-stream")
     except Exception as e:
         err_str = str(e)
         if "401" in err_str or "invalid_api_key" in err_str or "Invalid API Key" in err_str:
@@ -244,9 +248,13 @@ Describe in detail:
                 if chunk.content:
                     payload = json.dumps({"text": chunk.content})
                     yield f"data: {payload}\n\n"
-            yield "data: [DONE]\n\n"
-
-        return StreamingResponse(stream_generator(), media_type="text/event-stream")
+        stream_headers = {
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+            "Content-Type": "text/event-stream"
+        }
+        return StreamingResponse(stream_generator(), headers=stream_headers, media_type="text/event-stream")
     except HTTPException as http_err:
         raise http_err
     except Exception as e:
